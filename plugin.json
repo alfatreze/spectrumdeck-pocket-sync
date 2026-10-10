@@ -1,6 +1,6 @@
 {
   "name": "SpectrumDeck Library",
-  "description": "Scan Spectrum files on your card, build a library, or publish reviewed bundles. Local files only; preserves control presets.",
+  "description": "Find Spectrum folders on your card, build a library, or publish reviewed bundles. Local files only; preserves control presets.",
   "allowed_hosts": [],
-  "logo_url": "https://raw.githubusercontent.com/alfatreze/spectrumdeck-pocket-sync/v0.2.1/assets/plugin-icon.png"
+  "logo_url": "https://raw.githubusercontent.com/alfatreze/spectrumdeck-pocket-sync/v0.2.2/assets/plugin-icon.png"
 }

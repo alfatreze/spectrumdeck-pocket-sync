@@ -1,5 +1,13 @@
 # Pocket Sync integration
 
+## Automatic folder selection — v0.2.2
+
+Scan card folder now offers detected Spectrum asset roots before asking for a path. Discovery checks immediate children of `Assets` whose names contain `spectrum` (case-insensitive) or equal `speccy`, and includes those containing nonempty supported loose media in their subfolders. The generated library and symlinks are excluded. Discovery only reads directory entries and file sizes; it does not hash media or write a publication.
+
+Choose a detected folder, then an assumed model and review the import as before. **Enter folder manually** supports custom locations anywhere on the selected card. No matches, inaccessible directories or discovery bounds fall back to manual entry with an explanation. Discovery limits: 100,000 entries, depth 32 and 100 roots. Extensions and folder names are hints, not compatibility checks. A selected root includes its subfolders; selecting a narrower folder uses the manual option.
+
+Validation: 10 native Rust tests, 22 Python importer tests, 24 real WASI scenarios, plus byte-identical catalog encodings across 3 generations and 10 Unicode titles / 19 releases each. The new folder chooser still requires verification in the installed Pocket Sync UI. Actual card publication, FAT power-loss durability and FPGA consumption remain unverified.
+
 ## Host contract and installed app
 
 Inspected the locally installed `/Applications/Pocket Sync.app`: bundle identifier `today.neil.pocket-sync`, version **7.0.1** (updated from the initially inspected 6.4.0). The app opens normally and currently offers “Connect to Pocket / SD Card”. No real card was selected or modified.

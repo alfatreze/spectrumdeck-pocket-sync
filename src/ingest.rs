@@ -87,6 +87,89 @@ fn alias(s: &str) -> String {
         .case_fold()
         .collect()
 }
+/// Read-only discovery in Spectrum-named Assets roots. Extensions suggest media,
+/// not a verified machine or playable release. Custom locations use manual entry.
+pub fn discover(pocket: &Path) -> Result<Vec<String>> {
+    let assets = library::safe(pocket, "Assets")?;
+    if !assets.exists() {
+        return Ok(vec![]);
+    }
+    let mut remaining = 100000usize;
+    fn entries(folder: &Path, remaining: &mut usize) -> Result<Vec<std::path::PathBuf>> {
+        let mut paths = vec![];
+        for entry in error(fs::read_dir(folder))? {
+            need(*remaining > 0, "discovery entry limit; use a manual folder")?;
+            *remaining -= 1;
+            paths.push(error(entry)?.path());
+        }
+        paths.sort();
+        Ok(paths)
+    }
+    fn contains_media(
+        pocket: &Path,
+        folder: &Path,
+        remaining: &mut usize,
+        depth: usize,
+    ) -> Result<bool> {
+        need(depth <= 32, "discovery depth limit; use a manual folder")?;
+        let mut found = false;
+        for path in entries(folder, remaining)? {
+            let Some(relative) = path.strip_prefix(pocket).ok().and_then(|p| p.to_str()) else {
+                continue;
+            };
+            if library::relative(relative).is_err()
+                || relative == library::TARGET
+                || relative.starts_with(&format!("{}/", library::TARGET))
+            {
+                continue;
+            }
+            let meta = error(fs::symlink_metadata(&path))?;
+            if meta.is_symlink() {
+                continue;
+            }
+            if meta.is_dir() {
+                found |= contains_media(pocket, &path, remaining, depth + 1)?;
+            } else if meta.is_file() && meta.len() > 0 && meta.len() <= 256 * 1024 * 1024 {
+                let extension = path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+                    .to_ascii_lowercase();
+                found |= format(&extension).is_ok();
+            }
+        }
+        Ok(found)
+    }
+    let mut folders = vec![];
+    for path in entries(&assets, &mut remaining)? {
+        let name = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.contains("spectrum") || name == "speccy") {
+            continue;
+        }
+        let Some(relative) = path.strip_prefix(pocket).ok().and_then(|p| p.to_str()) else {
+            continue;
+        };
+        if library::relative(relative).is_err() {
+            continue;
+        }
+        let meta = error(fs::symlink_metadata(&path))?;
+        if meta.is_symlink() || !meta.is_dir() {
+            continue;
+        }
+        if contains_media(pocket, &path, &mut remaining, 0)? {
+            need(
+                folders.len() < 100,
+                "discovery folder limit; use a manual folder",
+            )?;
+            folders.push(relative.to_string());
+        }
+    }
+    Ok(folders)
+}
 pub fn preview(pocket: &Path, source: &str, machine: &str, log: impl Fn(&str)) -> Result<Preview> {
     model(machine)?;
     library::relative(source)?;

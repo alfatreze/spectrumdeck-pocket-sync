@@ -43,9 +43,60 @@ fn menu() -> PluginMessage {
         ],
     }
 }
+fn manual_folder() -> PluginMessage {
+    PluginMessage::Text { name: "scan-folder".into(), query: "Folder relative to the selected card, e.g. Assets/zxspectrum/common. Loose TAP/TZX/Z80/SNA/DSK/TRD/VHD/SZX files only; archives use desktop preparation.".into() }
+}
+fn choose_source(source: &str) -> FnResult<PluginMessage> {
+    if let Err(e) = library::relative(source) {
+        log(&format!("Invalid card folder: {e}\n"));
+        return Ok(menu());
+    }
+    var::set("source", source)?;
+    Ok(PluginMessage::Choice {
+        name: "scan-model".into(),
+        query: "Assumed model for unidentified files. This does not establish compatibility."
+            .into(),
+        choices: vec![
+            "48k".into(),
+            "128k".into(),
+            "pentagon".into(),
+            "Cancel".into(),
+        ],
+    })
+}
+fn discover_folders() -> FnResult<PluginMessage> {
+    var::remove("folders")?;
+    var::remove("scan")?;
+    var::remove("source")?;
+    match ingest::discover(Path::new("pocket")) {
+        Ok(folders) if !folders.is_empty() => {
+            log(&format!(
+                "Found {} Spectrum-named Assets folders with loose media. Discovery is read-only; compatibility is not verified.\n",
+                folders.len()
+            ));
+            var::set("folders", serde_json::to_string(&folders)?)?;
+            let mut choices = folders;
+            choices.extend(["Enter folder manually".into(), "Cancel".into()]);
+            Ok(PluginMessage::Choice { name: "detected-folder".into(), query: "Choose a Spectrum folder on the selected card. Subfolders are included. Custom locations can be entered manually.".into(), choices })
+        }
+        Ok(_) => {
+            log(
+                "No loose media found in Spectrum-named Assets folders. Enter a custom folder relative to the card.\n",
+            );
+            Ok(manual_folder())
+        }
+        Err(e) => {
+            log(&format!(
+                "Folder discovery stopped: {e}. Enter a folder manually.\n"
+            ));
+            Ok(manual_folder())
+        }
+    }
+}
 #[plugin_fn]
 pub fn start() -> FnResult<PluginMessage> {
     var::remove("pending")?;
+    var::remove("folders")?;
     var::remove("scan")?;
     var::remove("source")?;
     log("SpectrumDeck: no network downloads; user presets are preserved.\n");
@@ -54,10 +105,13 @@ pub fn start() -> FnResult<PluginMessage> {
 #[plugin_fn]
 pub fn handle_response(message: HostMessage) -> FnResult<PluginMessage> {
     match message {
-  HostMessage::Kill=>{var::remove("scan")?;var::remove("source")?;var::remove("pending")?;log("Cancelled between steps.\n");Ok(PluginMessage::Exit)},
+  HostMessage::Kill=>{var::remove("folders")?;var::remove("scan")?;var::remove("source")?;var::remove("pending")?;log("Cancelled between steps.\n");Ok(PluginMessage::Exit)},
   HostMessage::Answer{name,value}=>match (name.as_str(),value.as_str()){
-   ("menu","Scan card folder")=>Ok(PluginMessage::Text{name:"scan-folder".into(),query:"Folder relative to the selected card, e.g. Assets/zxspectrum/common. Loose TAP/TZX/Z80/SNA/DSK/TRD/VHD/SZX files only; archives use desktop preparation.".into()}),
-   ("scan-folder",source)=>{if let Err(e)=library::relative(source){log(&format!("Invalid card folder: {e}\n"));return Ok(menu())}var::set("source",source)?;Ok(PluginMessage::Choice{name:"scan-model".into(),query:"Assumed model for unidentified files. This does not establish compatibility.".into(),choices:vec!["48k".into(),"128k".into(),"pentagon".into(),"Cancel".into()]})},
+   ("menu","Scan card folder")=>discover_folders(),
+   ("detected-folder","Enter folder manually")=>{var::remove("folders")?;Ok(manual_folder())},
+   ("detected-folder","Cancel")=>{var::remove("folders")?;Ok(menu())},
+   ("detected-folder",source)=>{let folders=var::get::<String>("folders")?.unwrap_or_default();var::remove("folders")?;let folders:Vec<String>=serde_json::from_str(&folders).unwrap_or_default();if folders.iter().any(|p|p==source){choose_source(source)}else{log("Folder selection expired or invalid; scan again.\n");Ok(menu())}},
+   ("scan-folder",source)=>choose_source(source),
    ("scan-model","Cancel")=>{var::remove("source")?;Ok(menu())},
    ("scan-model",model)=>{if let Some(source)=var::get::<String>("source")?{var::remove("source")?;match ingest::preview(Path::new("pocket"),&source,model,log){
     Ok(p)=>{for reason in p.excluded.iter().take(50){log(&format!("Excluded: {reason}\n"));}log(&format!("{} new, {} already present, {} aliases, {} exclusions. New titles use filenames and assumed model {}.\n",p.candidates.len(),p.existing,p.aliases,p.excluded.len(),p.model));

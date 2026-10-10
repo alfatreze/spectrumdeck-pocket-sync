@@ -33,7 +33,8 @@ def main():
         with extism.Plugin(native_manifest,wasi=True) as native_plugin:
             def native_answer(name,value):return json.loads(native_plugin.call('handle_response',json.dumps({'Answer':{'name':name,'value':value}}).encode()))
             native_plugin.call('start',b'')
-            native_answer('menu','Scan card folder');native_answer('scan-folder','games')
+            assert native_answer('menu','Scan card folder')['Text']['name']=='scan-folder'
+            native_answer('scan-folder','games')
             native_answer('scan-model','48k');native_answer('scan-confirm','Create/update library')
             assert verified_publications(native_card/TARGET)[0]['sequence']==1, ''.join(LOG)
         with extism.Plugin(manifest,wasi=True) as plugin:
@@ -68,7 +69,20 @@ def main():
             # Native loose-file scan, with a real card-folder ABI and no Python preparation.
             card_media=pocket/'Assets'/'zxspectrum'/'common';card_media.mkdir(parents=True)
             native=card_media/'Native.tap';native.write_bytes(b'native original test bytes')
-            call('start');answer('menu','Scan card folder');answer('scan-folder','Assets/zxspectrum/common')
+            call('start')
+            discovered=answer('menu','Scan card folder')['Choice']
+            assert discovered['name']=='detected-folder'
+            assert discovered['choices']==['Assets/zxspectrum','Enter folder manually','Cancel']
+            assert verified_publications(library)[0]['sequence']==2
+            assert answer('detected-folder','Cancel')['Choice']['name']=='menu'
+            answer('menu','Scan card folder')
+            assert answer('detected-folder','not-a-detected-folder')['Choice']['name']=='menu'
+            assert answer('detected-folder','Assets/zxspectrum')['Choice']['name']=='menu'
+            answer('menu','Scan card folder')
+            assert answer('detected-folder','Enter folder manually')['Text']['name']=='scan-folder'
+            answer('scan-folder','Assets/zxspectrum/common');answer('scan-model','Cancel')
+            answer('menu','Scan card folder')
+            assert answer('detected-folder','Assets/zxspectrum')['Choice']['name']=='scan-model'
             result=answer('scan-model','128k');assert result['Choice']['name']=='scan-confirm'
             answer('scan-confirm','Cancel');assert verified_publications(library)[0]['sequence']==2
             answer('scan-folder','Assets/zxspectrum/common');answer('scan-model','128k')
@@ -95,6 +109,6 @@ def main():
             (bad/'bundle.json').write_text(json.dumps(document));call('start');answer('bundle','invalid')
             assert 'index length' in LOG[-1]
         print(json.dumps({'runtime':extism.extism_version(),'wasmSha256':hashlib.sha256(wasm.read_bytes()).hexdigest(),
-                          'checks':['Pocket Sync mount and JSON ABI','cancel before write','unsafe bundle name','actual WASI first publication','idempotent retry','corrupt source rejection','additive generation','preset preservation','stale bundle rejection','verified inspection','Kill message','structural index rejection','native scan confirmation/cancel','native stale review rejection','native additive publication','native UUID/model parity','native no-change scan','native first publication on empty card'],
+                          'checks':['Pocket Sync mount and JSON ABI','cancel before write','unsafe bundle name','actual WASI first publication','idempotent retry','corrupt source rejection','additive generation','preset preservation','stale bundle rejection','verified inspection','Kill message','structural index rejection','native scan confirmation/cancel','native stale review rejection','native additive publication','native UUID/model parity','native no-change scan','native first publication on empty card','discovery no-results manual fallback','detected folder choice is read-only','discovery cancel','expired or forged selection rejected','explicit manual fallback','detected folder enters model review'],
                           'log':LOG},indent=2))
 if __name__=='__main__':main()

@@ -95,3 +95,63 @@ fn links_excluded() {
     assert!(a.candidates.is_empty());
     assert_eq!(a.excluded.len(), 1);
 }
+
+#[test]
+fn discovery_filters_and_keeps_sources_unchanged() {
+    let t = Temp::new("discover");
+    let p = t.0.join("pocket");
+    assert!(ingest::discover(&p).unwrap().is_empty());
+    for folder in [
+        "Assets/zxspectrum/common/nested",
+        "Assets/ZX-Spectrum/pack",
+        "Assets/speccy",
+        "Assets/gameboy",
+        "Assets/spectrum-empty",
+        "Assets/spectrum-archive",
+        library::TARGET,
+    ] {
+        fs::create_dir_all(p.join(folder)).unwrap();
+    }
+    for file in [
+        "Assets/zxspectrum/common/nested/Game.TAP",
+        "Assets/ZX-Spectrum/pack/Game.z80",
+        "Assets/speccy/Game.sna",
+        "Assets/gameboy/Other.dsk",
+        "Assets/spectrumdeck/common/library/Game.tap",
+    ] {
+        fs::write(p.join(file), b"original").unwrap();
+    }
+    fs::write(p.join("Assets/spectrum-empty/Empty.tap"), b"").unwrap();
+    fs::write(p.join("Assets/spectrum-archive/Pack.zip"), b"archive").unwrap();
+    assert_eq!(
+        ingest::discover(&p).unwrap(),
+        vec!["Assets/ZX-Spectrum", "Assets/speccy", "Assets/zxspectrum"]
+    );
+    assert_eq!(
+        fs::read(p.join("Assets/zxspectrum/common/nested/Game.TAP")).unwrap(),
+        b"original"
+    );
+    assert!(!p.join(library::TARGET).join("publication-a.json").exists());
+}
+#[cfg(unix)]
+#[test]
+fn discovery_never_follows_links() {
+    let t = Temp::new("discover-links");
+    let p = t.0.join("pocket");
+    fs::write(p.join("media/Game.tap"), b"original").unwrap();
+    fs::create_dir_all(p.join("Assets/spectrum/common")).unwrap();
+    std::os::unix::fs::symlink(p.join("media"), p.join("Assets/zxspectrum")).unwrap();
+    std::os::unix::fs::symlink(p.join("media"), p.join("Assets/spectrum/common/linked")).unwrap();
+    assert!(ingest::discover(&p).unwrap().is_empty());
+}
+#[test]
+fn discovery_depth_is_bounded() {
+    let t = Temp::new("discover-depth");
+    let p = t.0.join("pocket");
+    let mut folder = p.join("Assets/spectrum");
+    for _ in 0..34 {
+        folder = folder.join("a");
+    }
+    fs::create_dir_all(folder).unwrap();
+    assert!(ingest::discover(&p).unwrap_err().contains("depth limit"));
+}

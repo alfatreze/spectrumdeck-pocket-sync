@@ -1,0 +1,25 @@
+name: Build and validate plugin
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: cargo test --locked
+      - run: python -m unittest discover -s tests -p 'test_*.py'
+      - run: cargo build --release --target wasm32-wasip1 --locked
+      - run: python -m pip install extism==1.1.1 extism-sys==1.41.0
+      - run: python tools/test_pocketsync_wasm.py
+      - run: mkdir -p dist && cp target/wasm32-wasip1/release/spectrumdeck_pocket_plugin.wasm dist/plugin.wasm && cp plugin.json dist/plugin.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocket-sync-plugin
+          path: dist/

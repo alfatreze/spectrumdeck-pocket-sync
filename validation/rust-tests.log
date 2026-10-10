@@ -1,0 +1,22 @@
+   Compiling spectrumdeck-pocket-plugin v0.1.0 (repository)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+     Running unittests src/lib.rs (integrations/pocketsync/target/debug/deps/spectrumdeck_pocket_plugin-3d0f4c7921d6051f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/validation.rs (integrations/pocketsync/target/debug/deps/validation-fda4cebca96ad21b)
+
+running 2 tests
+test wire_record_rejects_extra_fields ... ok
+test paths_and_unicode_never_panic ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests spectrumdeck_pocket_plugin
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

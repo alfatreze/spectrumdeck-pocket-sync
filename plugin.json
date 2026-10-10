@@ -1,0 +1,5 @@
+{
+  "name": "SpectrumDeck Library",
+  "description": "Verify and publish reviewed SpectrumDeck library bundles. Local files only; preserves control presets.",
+  "allowed_hosts": []
+}

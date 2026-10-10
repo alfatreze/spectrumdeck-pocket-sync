@@ -41,6 +41,8 @@ def scan(root,metadata=None,default_model='48k',allow_fixtures=False):
             path=folder/name;relative=path.relative_to(root).as_posix();fmt=path.suffix.lower().lstrip('.')
             if path.is_symlink():report['excluded'].append({'path':relative,'reason':'symlink'});continue
             if fmt not in formats:continue
+            if name.startswith('._'):
+                report['excluded'].append({'path':relative,'reason':'macOS metadata sidecar'});continue
             try:
                 catalog.relative_path(relative);size=path.stat().st_size
                 catalog.require(0<size<=0xffffffff,'empty or >4 GB media');sha=digest(path)

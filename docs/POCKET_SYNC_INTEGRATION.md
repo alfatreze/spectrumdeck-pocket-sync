@@ -1,5 +1,13 @@
 # Pocket Sync integration
 
+## Two import interfaces — v0.3.0
+
+The graphical desktop companion now runs the actual Python importer through a local-only bridge. Native card/folder/archive selection leads to a searchable release review, keep/skip and format choices, then a real verified additive import. See [desktop companion instructions](DESKTOP_COMPANION.md). The launcher requires Python 3.11+ on macOS; it is a development browser companion, not a signed standalone app.
+
+Pocket Sync now offers Add games from card → detected folder or button-based folder browsing → model assumption → Add games. Empty cards get first-use guidance instead of an unexplained path prompt. Advanced options contains manual paths and prepared-bundle tools. Desktop companion & help opens the release download page. The host ABI cannot embed the graphical layout or start the Python process, so both remain distinct interfaces.
+
+Validation: 11 Rust tests, 30 standalone Python tests (8 companion/backend tests), 30 real WASI scenarios, 11 browser scenarios exercising real temporary-card imports, and catalog byte parity. The main project’s complete host suite passed 96 tests. Native macOS pickers are implemented but browser tests inject picker results; installed-app walkthrough, physical-card import and runtime loading still need qualification. No real user card was modified during testing.
+
 ## Automatic folder selection — v0.2.2
 
 Scan card folder now offers detected Spectrum asset roots before asking for a path. Discovery checks immediate children of `Assets` whose names contain `spectrum` (case-insensitive) or equal `speccy`, and includes those containing nonempty supported loose media in their subfolders. The generated library and symlinks are excluded. Discovery only reads directory entries and file sizes; it does not hash media or write a publication.

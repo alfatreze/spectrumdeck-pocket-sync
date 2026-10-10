@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "Empty-card guidance",
+    "Native picker adapter",
+    "Actual pack preview",
+    "Format guard",
+    "Format choice",
+    "Release search",
+    "390px reflow",
+    "Actual verified import",
+    "Report download",
+    "Duplicate-only guard",
+    "Session reload"
+  ],
+  "errors": []
+}

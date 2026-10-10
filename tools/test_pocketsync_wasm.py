@@ -17,6 +17,11 @@ def print_msg(message: str) -> int:
     LOG.append(message)
     return 0
 
+@extism.host_fn()
+def open_url(url: str) -> int:
+    LOG.append("Opened help: " + url)
+    return 0
+
 def main():
     wasm=ROOT/'target/wasm32-wasip1/release/spectrumdeck_pocket_plugin.wasm'
     with tempfile.TemporaryDirectory(prefix='spectrumdeck-pocketsync-test-') as temporary:
@@ -33,7 +38,13 @@ def main():
         with extism.Plugin(native_manifest,wasi=True) as native_plugin:
             def native_answer(name,value):return json.loads(native_plugin.call('handle_response',json.dumps({'Answer':{'name':name,'value':value}}).encode()))
             native_plugin.call('start',b'')
-            assert native_answer('menu','Scan card folder')['Text']['name']=='scan-folder'
+            empty=native_answer('menu','Add games from card')['Choice']
+            assert empty['name']=='empty-card'
+            browse=native_answer('empty-card','Browse card folders')['Choice']
+            assert 'games' in browse['choices']
+            assert native_answer('browse','games')['Choice']['name']=='browse'
+            assert native_answer('browse','Use this folder')['Choice']['name']=='scan-model'
+            native_answer('scan-model','Cancel')
             native_answer('scan-folder','games')
             native_answer('scan-model','48k');native_answer('scan-confirm','Create/update library')
             assert verified_publications(native_card/TARGET)[0]['sequence']==1, ''.join(LOG)
@@ -64,22 +75,31 @@ def main():
             answer('bundle','first');answer('confirm','Publish')
             assert any('library changed' in line for line in LOG)
             assert verified_publications(library)[0]['sequence']==2
-            answer('menu','Inspect current library');assert 'Verified generation 2' in LOG[-1]
+            answer('menu','Inspect current library');assert 'verified generation 2' in LOG[-1]
+            help=answer('menu','Desktop companion & help');assert help['Choice']['name']=='companion-help'
+            answer('companion-help','Open companion download');assert LOG[-1].startswith('Opened help: https://github.com/')
             assert call('handle_response','Kill')=='Exit'
             # Native loose-file scan, with a real card-folder ABI and no Python preparation.
             card_media=pocket/'Assets'/'zxspectrum'/'common';card_media.mkdir(parents=True)
             native=card_media/'Native.tap';native.write_bytes(b'native original test bytes')
+            (card_media/'._Native.tap').write_bytes(b'Finder metadata sidecar')
             call('start')
             discovered=answer('menu','Scan card folder')['Choice']
             assert discovered['name']=='detected-folder'
-            assert discovered['choices']==['Assets/zxspectrum','Enter folder manually','Cancel']
+            assert discovered['choices']==['Assets/zxspectrum','Browse card folders','Cancel']
             assert verified_publications(library)[0]['sequence']==2
             assert answer('detected-folder','Cancel')['Choice']['name']=='menu'
             answer('menu','Scan card folder')
             assert answer('detected-folder','not-a-detected-folder')['Choice']['name']=='menu'
             assert answer('detected-folder','Assets/zxspectrum')['Choice']['name']=='menu'
             answer('menu','Scan card folder')
-            assert answer('detected-folder','Enter folder manually')['Text']['name']=='scan-folder'
+            assert answer('detected-folder','Browse card folders')['Choice']['name']=='browse'
+            assert answer('browse','Assets')['Choice']['name']=='browse'
+            assert answer('browse','Assets/zxspectrum')['Choice']['name']=='browse'
+            assert answer('browse','Parent folder')['Choice']['name']=='browse'
+            assert answer('browse','Cancel')['Choice']['name']=='menu'
+            answer('menu','Advanced options')
+            assert answer('advanced','Enter card folder manually')['Text']['name']=='scan-folder'
             answer('scan-folder','Assets/zxspectrum/common');answer('scan-model','Cancel')
             answer('menu','Scan card folder')
             assert answer('detected-folder','Assets/zxspectrum')['Choice']['name']=='scan-model'
@@ -109,6 +129,6 @@ def main():
             (bad/'bundle.json').write_text(json.dumps(document));call('start');answer('bundle','invalid')
             assert 'index length' in LOG[-1]
         print(json.dumps({'runtime':extism.extism_version(),'wasmSha256':hashlib.sha256(wasm.read_bytes()).hexdigest(),
-                          'checks':['Pocket Sync mount and JSON ABI','cancel before write','unsafe bundle name','actual WASI first publication','idempotent retry','corrupt source rejection','additive generation','preset preservation','stale bundle rejection','verified inspection','Kill message','structural index rejection','native scan confirmation/cancel','native stale review rejection','native additive publication','native UUID/model parity','native no-change scan','native first publication on empty card','discovery no-results manual fallback','detected folder choice is read-only','discovery cancel','expired or forged selection rejected','explicit manual fallback','detected folder enters model review'],
+                          'checks':['Pocket Sync mount and JSON ABI','cancel before write','unsafe bundle name','actual WASI first publication','idempotent retry','corrupt source rejection','additive generation','preset preservation','stale bundle rejection','verified inspection','Kill message','structural index rejection','native scan confirmation/cancel','native stale review rejection','native additive publication','native UUID/model parity','native no-change scan','native first publication on empty card','discovery no-results manual fallback','detected folder choice is read-only','discovery cancel','expired or forged selection rejected','explicit manual fallback','detected folder enters model review','empty-card guidance','browse custom games folder','browse parent and cancel','advanced manual path','companion help opens download','macOS metadata sidecar excluded'],
                           'log':LOG},indent=2))
 if __name__=='__main__':main()

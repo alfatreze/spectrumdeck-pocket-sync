@@ -2,7 +2,12 @@
 
 ![SpectrumDeck plugin cover](assets/plugin-icon.png)
 
-A local-file Rust/WASI plugin for publishing reviewed SpectrumDeck library bundles through Pocket Sync. **Experimental v0.2.2**: scan loose Spectrum files already on the selected card, build their catalog and publish a library entirely in Rust. Reviewed desktop bundles remain supported; archive extraction still uses the included Python tools.
+Two ways to prepare your SpectrumDeck library:
+
+- **Desktop companion**: the graphical Choose → Review → Import layout, native card/folder/archive pickers, searchable releases, keep/skip and format decisions, and real local imports. [Run the companion](docs/DESKTOP_COMPANION.md).
+- **Pocket Sync plugin v0.3.0**: a guided card-folder importer with folder browsing, clear empty-card help and advanced bundle tools. Stock Pocket Sync supplies the plugin window; its layout cannot match the graphical companion.
+
+Both retain existing games and presets and use verified additive generations. Neither downloads games or establishes Pocket launch compatibility. The earlier HTML prototype has been replaced by a real backend in the companion.
 
 ## Install in Pocket Sync
 
@@ -14,19 +19,17 @@ https://github.com/alfatreze/spectrumdeck-pocket-sync
 
 Pocket Sync fetches `plugin.wasm` and `plugin.json` from the latest release. No network hosts are enabled for the running plugin. Compatibility has been checked against the Pocket Sync 7.0.1 source ABI and exercised in Extism with matching filesystem mounts/messages; installation and earlier menus have been confirmed inside Pocket Sync; this update’s folder chooser has been tested in Extism. Actual card publication and durability remain unverified.
 
-## Create a library directly in Pocket Sync
+## Add games in Pocket Sync
 
-1. Refresh Plugins to install v0.2.2, then run SpectrumDeck Library.
-2. Choose **Scan card folder**.
-3. Select a detected Spectrum folder. The plugin looks under `Assets` for folder names containing `spectrum` (case-insensitive), or named `speccy`, with loose supported media in their subfolders. Discovery reads filenames and sizes, without hashing media or writing to the card. It excludes the generated library and symlinks.
-4. For a custom location, choose **Enter folder manually** and enter a card-relative path, for example `Assets/zxspectrum/common`. If discovery finds nothing or hits its bounds, this prompt appears automatically.
-5. Choose an assumed model (48k / 128k / pentagon), review counts/exclusions, then choose **Create/update library**.
+1. Refresh Plugins to install v0.3.0 and reopen SpectrumDeck Library.
+2. Choose **Add games from card** and select a detected Spectrum folder. **Browse card folders** navigates folders with buttons; choose **Use this folder** when you reach your games.
+3. Choose the assumed model, review the new/duplicate/excluded counts and choose **Add games**. Only this final action publishes.
 
-The plugin recursively scans loose TAP, TZX, Z80, SNA, DSK, TRD, VHD and SZX files. It deduplicates hashes, retains existing library games and presets, and skips identical bytes carrying conflicting extensions. New titles use filenames and remain unidentified: the chosen model is an assumption and does not prove compatibility. Sources are rechecked after confirmation. No new files means no publication. Archives are not extracted in this mode; use the desktop bundle tools below.
+On an empty card the plugin explains where games come from and offers the desktop companion. Use the companion for folders and archives on your Mac; it has a visual release-by-release review. Native plugin input is loose TAP/TZX/Z80/SNA/DSK/TRD/VHD/SZX media only. Conflicting extensions are excluded for desktop review, not guessed. Unknown titles use filenames and remain unqualified. Archives still use the companion or desktop bundle tools.
 
-Discovery is limited to 100,000 entries, depth 32 and 100 matching roots; unrelated Assets roots are not searched. Extension matching is a location hint and cannot establish Spectrum compatibility. Manual entry supports folders outside Assets.
+**View library** shows the verified generation. **Advanced options** contains manual card-relative paths, prepared bundles and detailed inspection. **Desktop companion & help** opens the latest release download page; it does not start a local process.
 
-Import bounds: 100,000 folder entries, depth 32, 256 MiB per media file, 2 GiB of scanned media. The generated library folder is excluded from recursive scans. Symlinks and unsafe files are excluded. Scanning does not modify original game files; publication copies selected media into the experimental library namespace.
+Discovery checks Spectrum-named Assets roots with 100,000-entry/depth-32 bounds. Folder browsing shows up to 100 child folders per step. Import bounds are 100,000 entries, depth 32, 256 MiB per media file and 2 GiB scanned media. Generated libraries, symlinks and macOS metadata sidecars are excluded. Native sources are rechecked before publication. Actual installed-app walkthrough and card durability still require verification.
 
 ## Prepare a library bundle
 

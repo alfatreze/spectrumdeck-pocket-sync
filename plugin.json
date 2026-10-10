@@ -1,6 +1,6 @@
 {
   "name": "SpectrumDeck Library",
-  "description": "Find Spectrum folders on your card, build a library, or publish reviewed bundles. Local files only; preserves control presets.",
+  "description": "Add games with guided card-folder browsing. Use the graphical desktop companion for local folders and archives. Preserves control presets.",
   "allowed_hosts": [],
-  "logo_url": "https://raw.githubusercontent.com/alfatreze/spectrumdeck-pocket-sync/v0.2.2/assets/plugin-icon.png"
+  "logo_url": "https://raw.githubusercontent.com/alfatreze/spectrumdeck-pocket-sync/v0.3.0/assets/plugin-icon.png"
 }

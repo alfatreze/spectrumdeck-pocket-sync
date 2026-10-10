@@ -1,0 +1,10 @@
+{
+  "pythonHostTests": 96,
+  "standalonePythonTests": 30,
+  "rustTests": 11,
+  "wasiScenarios": 30,
+  "browserScenarios": 11,
+  "realCardModified": false,
+  "nativePickerWalkthrough": "pending",
+  "catalogParity": "3 generations, 10 Unicode titles, 19 releases each"
+}

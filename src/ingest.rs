@@ -123,6 +123,13 @@ pub fn discover(pocket: &Path) -> Result<Vec<String>> {
             {
                 continue;
             }
+            if path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .is_some_and(|s| s.starts_with("._"))
+            {
+                continue;
+            }
             let meta = error(fs::symlink_metadata(&path))?;
             if meta.is_symlink() {
                 continue;
@@ -247,6 +254,14 @@ pub fn preview(pocket: &Path, source: &str, machine: &str, log: impl Fn(&str)) -
                 .unwrap_or("")
                 .to_lowercase();
             if format(&fmt).is_err() {
+                continue;
+            }
+            if path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .is_some_and(|s| s.starts_with("._"))
+            {
+                excluded.push(format!("{relative}: macOS metadata sidecar"));
                 continue;
             }
             if let Err(e) = library::relative(&relative) {

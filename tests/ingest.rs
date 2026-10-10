@@ -155,3 +155,15 @@ fn discovery_depth_is_bounded() {
     fs::create_dir_all(folder).unwrap();
     assert!(ingest::discover(&p).unwrap_err().contains("depth limit"));
 }
+
+#[test]
+fn macos_metadata_is_not_media() {
+    let t = Temp::new("metadata");
+    let p = t.0.join("pocket");
+    fs::create_dir_all(p.join("Assets/spectrum")).unwrap();
+    fs::write(p.join("Assets/spectrum/._Game.tap"), b"Finder metadata").unwrap();
+    assert!(ingest::discover(&p).unwrap().is_empty());
+    let preview = ingest::preview(&p, "Assets/spectrum", "48k", |_| {}).unwrap();
+    assert!(preview.candidates.is_empty());
+    assert!(preview.excluded[0].contains("metadata sidecar"));
+}

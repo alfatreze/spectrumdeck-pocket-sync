@@ -1,0 +1,97 @@
+use spectrumdeck_pocket_plugin::{ingest, library};
+use std::{fs, path::PathBuf};
+struct Temp(PathBuf);
+impl Temp {
+    fn new(name: &str) -> Self {
+        let p = std::env::temp_dir().join(format!("sd-native-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&p);
+        fs::create_dir_all(p.join("pocket/media")).unwrap();
+        fs::create_dir_all(p.join("host")).unwrap();
+        Self(fs::canonicalize(p).unwrap())
+    }
+}
+impl Drop for Temp {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+#[test]
+fn scan_aliases_conflicts_and_empty() {
+    let t = Temp::new("scan");
+    let p = t.0.join("pocket");
+    for (name, bytes) in [
+        ("one.tap", b"one".as_slice()),
+        ("copy.tap", b"one"),
+        ("wrong.z80", b"one"),
+        ("two.sna", b"two"),
+        ("empty.tap", b""),
+    ] {
+        fs::write(p.join("media").join(name), bytes).unwrap();
+    }
+    let a = ingest::preview(&p, "media", "48k", |_| {}).unwrap();
+    let b = ingest::preview(&p, "media", "48k", |_| {}).unwrap();
+    assert_eq!(a, b);
+    assert_eq!(a.candidates.len(), 1);
+    assert_eq!(a.aliases, 2);
+    assert_eq!(a.excluded.len(), 4);
+}
+#[test]
+fn native_additive_publication_and_preset() {
+    let t = Temp::new("add");
+    let p = t.0.join("pocket");
+    let h = t.0.join("host");
+    fs::write(p.join("media/a.tap"), b"one").unwrap();
+    let preview = ingest::preview(&p, "media", "128k", |_| {}).unwrap();
+    let name = ingest::prepare(&h, &p, &preview, |_| {}).unwrap();
+    let first = library::install(&h, &p, &name, |_| {}).unwrap();
+    assert_eq!(first.sequence, 1);
+    let root = p.join(library::TARGET);
+    fs::write(root.join("preset.json"), b"user-owned").unwrap();
+    fs::write(p.join("media/b.z80"), b"two").unwrap();
+    let preview = ingest::preview(&p, "media", "48k", |_| {}).unwrap();
+    assert_eq!(preview.existing, 1);
+    assert_eq!(preview.candidates.len(), 1);
+    let name = ingest::prepare(&h, &p, &preview, |_| {}).unwrap();
+    let second = library::install(&h, &p, &name, |_| {}).unwrap();
+    assert_eq!(second.sequence, 2);
+    assert_eq!(fs::read(root.join("preset.json")).unwrap(), b"user-owned");
+    assert_eq!(
+        ingest::preview(&p, "media", "48k", |_| {})
+            .unwrap()
+            .candidates
+            .len(),
+        0
+    );
+}
+#[test]
+fn stale_scan_rejected() {
+    let t = Temp::new("stale");
+    let p = t.0.join("pocket");
+    fs::write(p.join("media/a.tap"), b"one").unwrap();
+    let a = ingest::preview(&p, "media", "48k", |_| {}).unwrap();
+    fs::write(p.join("media/a.tap"), b"changed").unwrap();
+    assert!(
+        ingest::prepare(&t.0.join("host"), &p, &a, |_| {})
+            .unwrap_err()
+            .contains("changed")
+    );
+    assert!(!p.join(library::TARGET).exists());
+}
+#[test]
+fn unsafe_or_generated_sources_rejected() {
+    let t = Temp::new("paths");
+    let p = t.0.join("pocket");
+    for name in ["../media", "/media", library::TARGET] {
+        assert!(ingest::preview(&p, name, "48k", |_| {}).is_err());
+    }
+}
+#[cfg(unix)]
+#[test]
+fn links_excluded() {
+    let t = Temp::new("links");
+    let p = t.0.join("pocket");
+    std::os::unix::fs::symlink("/etc/hosts", p.join("media/link.tap")).unwrap();
+    let a = ingest::preview(&p, "media", "48k", |_| {}).unwrap();
+    assert!(a.candidates.is_empty());
+    assert_eq!(a.excluded.len(), 1);
+}

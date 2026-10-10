@@ -1,4 +1,4 @@
-# Pocket Sync integration — first working boundary
+# Pocket Sync integration
 
 ## Host contract and installed app
 
@@ -14,6 +14,12 @@ Pocket Sync loads `plugin.wasm` with WASI, maps the card as `pocket` and a dedic
 Rechecked after the app update: the plugin host implementation at the `v7.0.1` tag (`c8a3875f853750eb3f51d77a9a9501f98f5a4ef2`) is unchanged from the initially inspected source. The existing Rust/WASI integration therefore needs no host-ABI changes for 7.0.1.
 
 These are source-level host observations. Installed-app runtime compatibility has not been demonstrated: its UI has been inspected, while plugin execution used Extism 1.41.0 with the same mounts/function signatures/messages. Do not modify the signed application bundle to add the plugin.
+
+## Native card-folder ingestion (v0.2.0)
+
+The plugin now scans a user-selected card-relative folder, assumes a user-selected machine model, previews counts/exclusions, rechecks the review, compiles a catalog in Rust and publishes through the same verified A/B path. It creates the first library without Python or a prepared bundle. Existing games/defaults/presets survive additive scans. New releases remain filename-labelled/unidentified. Conflicting extensions are skipped and reported rather than guessed; advanced identification and format decisions still use the desktop workflow. ZIP/TAR extraction remains outside native mode. See README for native usage and bounds.
+
+Rust encoding is byte-identical to Python on the documented differential corpus (3 generations, 10 Unicode titles, 19 releases each), with hash-derived UUIDv5 identity checked in WASI. Unicode crate and Python Unicode versions may differ for newly assigned characters; this corpus is not exhaustive Unicode qualification.
 
 ## Implemented Rust plugin
 
@@ -67,10 +73,10 @@ The plugin uses individual file `sync_all`, a same-directory pointer rename and 
 ## Validation and next port
 
 - Standalone Python suite: 22 tests pass, including bundle preparation, preservation and stale input. The parent SpectrumDeck host suite also passed 88 tests.
-- Rust tests: path/Unicode safety and strict wire fields.
-- Real compiled WASI plugin: 12 scenarios pass under Extism with disposable `host`/`pocket` mounts: messages/mounts, cancellation, unsafe name, actual publication, idempotence, corrupt source, additive generation, preset preservation, stale bundle, inspection, Kill and structural index rejection.
+- Rust tests: 7 pass, including native scans, aliases/conflicts, stale review, additive publication/presets and path safety.
+- Real compiled WASI plugin: 18 scenarios pass under Extism with disposable `host`/`pocket` mounts: messages/mounts, cancellation, unsafe name, actual publication, idempotence, corrupt source, additive generation, preset preservation, stale bundle, inspection, Kill and structural index rejection.
 - Hashes/logs: `validation/`.
 
-**Rust is the preferred language for a fully in-plugin importer.** Share one Rust library between a native CLI and `wasm32-wasip1`; keep Python as a migration oracle until binary outputs and review fingerprints match. Port in this order: catalog encoder/decoder and deterministic UUID/sort rules; scanner and exact-hash metadata; bounded ZIP/TAR extraction; reviewed-choice state machine; additive compilation and publication. Test native and WASI on identical hostile/fixture corpora. No shell execution, browser UI embedding or generic Mac filesystem mount is needed. Packs still need to be placed in the plugin's host folder unless Pocket Sync adds a file-picker capability. The existing HTML prototype can remain a separate richer curator using the same review objects.
+**Rust is the preferred language for a fully in-plugin importer.** Share one Rust library between a native CLI and `wasm32-wasip1`; keep Python as a migration oracle until binary outputs and review fingerprints match. The catalog encoder, UUID/sort rules, native scanner and additive publication are implemented. Next port exact-hash metadata, bounded ZIP/TAR extraction and detailed reviewed-choice menus. Test native and WASI on identical hostile/fixture corpora. No shell execution, browser UI embedding or generic Mac filesystem mount is needed. Packs still need to be placed in the plugin's host folder unless Pocket Sync adds a file-picker capability. The existing HTML prototype can remain a separate richer curator using the same review objects.
 
 Provider search/download and cover enrichment remain separate features. A plugin language port does not grant permission to download a particular release.

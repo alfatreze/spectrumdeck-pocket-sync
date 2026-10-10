@@ -58,7 +58,7 @@ pub fn relative(name: &str) -> Result<()> {
         "unsafe path",
     )
 }
-fn safe(root: &Path, name: &str) -> Result<PathBuf> {
+pub(crate) fn safe(root: &Path, name: &str) -> Result<PathBuf> {
     relative(name)?;
     let mut path = root.to_owned();
     // Include ancestors of the root: a pre-existing symlink must not redirect writes.
@@ -77,7 +77,7 @@ fn safe(root: &Path, name: &str) -> Result<PathBuf> {
     }
     Ok(path)
 }
-fn hash(path: &Path) -> Result<(String, u64)> {
+pub(crate) fn hash(path: &Path) -> Result<(String, u64)> {
     let mut f = io(File::open(path))?;
     let mut digest = Sha256::new();
     let mut buf = [0u8; 65536];
@@ -93,7 +93,7 @@ fn hash(path: &Path) -> Result<(String, u64)> {
     }
     Ok((format!("{:x}", digest.finalize()), size))
 }
-fn json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
+pub(crate) fn json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
     let file = io(File::open(path))?;
     need(io(file.metadata())?.len() <= MAX_JSON, "JSON size limit")?;
     serde_json::from_reader(file).map_err(|e| e.to_string())

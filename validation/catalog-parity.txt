@@ -1,0 +1,1 @@
+Byte-identical Rust/Python catalogs: generations 1, 2, 4294967295; 10 Unicode titles; 19 releases each.

@@ -1,0 +1,33 @@
+   Compiling spectrumdeck-pocket-plugin v0.2.0 (repository)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.72s
+     Running unittests src/lib.rs (build/pocket-sync-repository/target/debug/deps/spectrumdeck_pocket_plugin-1443a5d10b788dff)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/ingest.rs (build/pocket-sync-repository/target/debug/deps/ingest-56fa65f6994cfbdb)
+
+running 5 tests
+test unsafe_or_generated_sources_rejected ... ok
+test links_excluded ... ok
+test stale_scan_rejected ... ok
+test scan_aliases_conflicts_and_empty ... ok
+test native_additive_publication_and_preset ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/validation.rs (build/pocket-sync-repository/target/debug/deps/validation-9a106d5de1ff3683)
+
+running 2 tests
+test wire_record_rejects_extra_fields ... ok
+test paths_and_unicode_never_panic ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests spectrumdeck_pocket_plugin
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

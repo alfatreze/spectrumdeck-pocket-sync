@@ -1,6 +1,6 @@
 {
   "runtime": "1.41.0",
-  "wasmSha256": "e3f23092a6aabeb7dea38c3c10bb72ba6836681c8836b050d0818928d265b99a",
+  "wasmSha256": "d5d86a300c6e3d67fda6d74ac6e4e08cbe2bf76253154e99d297e2cbbfb4994c",
   "checks": [
     "Pocket Sync mount and JSON ABI",
     "cancel before write",

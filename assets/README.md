@@ -1,0 +1,1 @@
+SpectrumDeck plugin cover: original rectangular library stack and four-colour signature, paper/ink palette, Departure Mono SD lettering baked on its native 11 px grid and scaled by integer multiples. Editable SVG and PNG included. PNG master: 480×480; native preview: 120×120. Departure Mono font licence retained alongside the artwork. No external cover art or Sinclair logo used.

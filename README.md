@@ -1,5 +1,7 @@
 # SpectrumDeck Pocket Sync plugin
 
+![SpectrumDeck plugin cover](assets/plugin-icon.png)
+
 A local-file Rust/WASI plugin for publishing reviewed SpectrumDeck library bundles through Pocket Sync. **Experimental v0.2.0**: scan loose Spectrum files already on the selected card, build their catalog and publish a library entirely in Rust. Reviewed desktop bundles remain supported; archive extraction still uses the included Python tools.
 
 ## Install in Pocket Sync
